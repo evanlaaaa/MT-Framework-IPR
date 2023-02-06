@@ -1,0 +1,61 @@
+//------------------------------------------------
+//--- 010 Editor v8.0.1 Binary Template
+//
+//      File: 
+//   Authors:   Evanla PC
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask:   *.ipr
+//  ID Bytes: 
+//   History: 
+//
+//------------------------------------------------
+
+typedef struct {
+    char    FileType[];
+    long    Version<format=hex>;
+    byte    NUL[56]<hidden=true>;
+    uint64  EntryOS<name="Entry OffSet">;
+    uint64  entryCount<name="Entry Count">;
+} Header<hidden=false>;
+
+typedef struct {
+    uint64  NUL[4]<hidden=false>;
+    uint64  assetOffset<name="String OffSet">;
+    uint64  NUL1[5]<hidden=false>;
+    uint64  configOffset;
+    uint64  configCount;
+    uint64  NUL3[4]<hidden=false>;
+} Entry<hidden=false>;
+
+typedef struct {
+    float   coordX<name="Position X">;
+    float   coordY<name="Position Y">;
+    float   coordZ<name="Position Z">;
+    float   scaleX<name="Scale     X">;
+    float   scaleY<name="Scale     Y">;
+    float   scaleZ<name="Scale     Z">;
+    float   rotationX<name="Rotation     X">;
+    float   rotationY<name="Rotation     Y">;
+    float   rotationZ<name="Rotation     Z">;
+    float   rotationW<name="Rotation     W">;
+    float   unk[0x1A];
+} Config;
+
+Header header<name="Header">;
+Entry entry[header.entryCount]<name="Entry">;
+
+local uint i;
+
+for (i = 0; i < header.entryCount; i++) {
+    FSeek(entry[i].assetOffset);
+    struct {
+        string  path1<bgcolor=0xfff0f0,open=suppress>;
+        byte    NULL0<hidden=true>;
+        string  path2<hidden=true>;
+        string  path3<hidden=true>;
+        FSeek(entry[i].configOffset);
+        Config config[entry[i].configCount];       
+    } Data;
+}

@@ -64,13 +64,13 @@ class ImportIPR(Operator, ImportHelper):
             # Extract the path1
             path1_end = binary_data[entry["assetOffset"]:].index(b'\x00')
             path1 = binary_data[entry["assetOffset"]:entry["assetOffset"]+path1_end].decode()
-            print(path1)
+            print("Importing " + path1 + "(TOTAL: " + str(entry["configCount"]) + ")")
             
             for i in range(entry["configCount"]):
                 config_data = struct.unpack_from(config_format, binary_data, entry["configOffset"]  + i * 144)
                 coordX, coordY, coordZ, scaleX, scaleY, scaleZ, rotX, rotY, rotZ, rotW, unk = config_data
-                print("importing " + str(i))
-                print([coordX, coordY, coordZ, scaleX, scaleY, scaleZ, rotX, rotY, rotZ, rotW])
+                print("Currently importing index: " + str(i))
+
                 # mod3 import here
                 bpy.ops.object.select_all(action="DESELECT")
                 options = {
@@ -82,12 +82,15 @@ class ImportIPR(Operator, ImportHelper):
                 }
                 bpy.ops.custom_import.import_mhw_mod3(filepath=str(self.properties.texture_path +"\\"+ path1 +'.mod3'), **options)
                 bpy.ops.object.select_all(action="SELECT")
-                objs = [obj for obj in bpy.context.selected_objects if obj.tag == True]
-                objs[0].location = (coordX, coordY, coordZ)
-                objs[0].scale = (scaleX, scaleY, scaleZ)
-                objs[0].rotation_mode = 'QUATERNION'
-                objs[0].rotation_quaternion = (rotW, rotX, rotY, rotZ)
-                objs[0].tag = False
+                objs = [obj for obj in bpy.context.selected_objects if obj.tag == True and obj.get("isTransformed") is None]
+                bpy.ops.object.select_all(action="DESELECT")
+                for x in objs:
+                    x["isTransformed"] = 1
+                    x.location = (coordX, coordY, coordZ)
+                    x.scale = (scaleX, scaleY, scaleZ)
+                    x.rotation_mode = 'QUATERNION'
+                    x.rotation_quaternion = (rotW, rotX, rotY, rotZ)
+                    x.tag = False
                 bpy.ops.object.select_all(action="DESELECT")
 
         return {'FINISHED'}
@@ -104,7 +107,8 @@ def register():
 def unregister():
     bpy.utils.unregister_class(ImportIPR)
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
-
+    
+    #del bpy.types.Object.MHWSkeleton
 
 if __name__ == "__main__":
     try:
